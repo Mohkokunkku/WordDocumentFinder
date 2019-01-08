@@ -12,7 +12,9 @@ namespace FileLoop
 {
     class LoopFiles
     {
-       static int intTarjous = 0;
+        static List<string> arrMuutAsiakirjat = new List<string>();
+        static List<string> arrErrorAsiakirjat = new List<string>();
+        static int intTarjous = 0;
        static int intMuistio = 0;
        static int intTarkastus = 0;
        static int intSelostus = 0;
@@ -26,6 +28,7 @@ namespace FileLoop
         static void Main(string[] args)
         {
             ProcessFiles("Z:\\Copla Tiedostot");
+            //ALLA PRINTATAAN LOPULLISET TULOKSET KONSOLIIN
             Console.WriteLine("Valmis!");
             Console.WriteLine("Tarjouksia " + intTarjous);
             Console.WriteLine("Muistioita " + intMuistio);
@@ -36,6 +39,21 @@ namespace FileLoop
             Console.WriteLine("Kansioita " + intKansio);
             Console.WriteLine("Työmaakokousten asiakirjoja " + intKokous);
             Console.WriteLine("Muita luokittelemattomia asiakirjoja " + intMuut);
+
+
+            Console.WriteLine("LIIAN PITKÄN TIEDOSTOPOLUN ASIAKIRJAT:");
+            foreach (string result in arrErrorAsiakirjat)
+            {
+                Console.WriteLine(result);
+            }
+
+
+            Console.WriteLine("MAHDOLLISET EI-DOCSTARTER ASIAKIRJAT:");
+            foreach (string result in arrMuutAsiakirjat)
+            {
+                Console.WriteLine(result);
+            }
+            
             Console.Read();
         }
 
@@ -48,8 +66,8 @@ namespace FileLoop
             
             stack = new Stack<string>();
             stack.Push(path);
-            DateTime year2017 = new DateTime(2017, 1, 1);
-            DateTime year2018 = new DateTime(2017, 12, 31);
+            DateTime year2017 = new DateTime(2018, 1, 1);
+            DateTime year2018 = new DateTime(2018, 12, 31);
 
             while (stack.Count > 0)
             {
@@ -61,11 +79,13 @@ namespace FileLoop
 
                     files = Directory.GetFiles(dir);
 
-
-                    foreach (string file in files)
+                    Parallel.ForEach(files, file =>
+                    //foreach (string file in files)
                     {
 
-                        // Process each file
+                    // Process each file
+                    try
+                    {
                         FileInfo fi = new FileInfo(file);
                         if (fi.Extension == ".docx" || fi.Extension == ".doc") //tarkistaa mikä on tiedostopääte 
                         {
@@ -77,22 +97,31 @@ namespace FileLoop
                                 if (filename.Contains("copla"))
                                 {
                                     intDocuments++; // DocStarterilla luultavasti luotu asiakirja 
-                                    
-                                    Console.WriteLine("DocStarterilla luotu: "+ filename + "  Yhteensä: " + intDocuments + " asiakirjaa");
+
+                                    Console.WriteLine("DocStarterilla luotu: " + filename + "  Yhteensä: " + intDocuments + " asiakirjaa");
                                 }
                                 else
                                 {
                                     intOtherDocuments++; //Asiakirjat jotka ei välttämättä ole luotu DocStarterilla, eivät sisällä Copla-sanaa
                                     Console.WriteLine("Ei välttämättä luotu DocStarterilla: " + filename + "  Yhteensä: " + intOtherDocuments + " asiakirjaa");
-                                }                      
-                                    
+                                        arrMuutAsiakirjat.Add(filename);
+                                }
+
                                 //string filename = Path.GetFileNameWithoutExtension(fi.FullName);
                                 documentType(filename);
-                                    //  Console.WriteLine(fi.CreationTime);
-                                                                  
+                                //  Console.WriteLine(fi.CreationTime);
+
                             }
                         }
+
                     }
+                        catch (PathTooLongException e)
+                        {
+
+                            Console.WriteLine("PATH IS TOO LONG THIS ONE IS SKIPPED " + file);
+                            arrErrorAsiakirjat.Add(file);
+                        }
+                    });
 
 
 
@@ -103,6 +132,7 @@ namespace FileLoop
                         stack.Push(directory);
                     }
                 }
+
                 catch (PathTooLongException e)
                 {
                     Console.WriteLine("!!ERROR HANDLER!!: " + e.Message);
